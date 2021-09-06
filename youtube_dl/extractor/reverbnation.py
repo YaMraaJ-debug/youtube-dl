@@ -33,14 +33,10 @@ class ReverbNationIE(InfoExtractor):
 
         THUMBNAILS = ('thumbnail', 'image')
         quality = qualities(THUMBNAILS)
-        thumbnails = []
-        for thumb_key in THUMBNAILS:
-            if api_res.get(thumb_key):
-                thumbnails.append({
+        thumbnails = [{
                     'url': api_res[thumb_key],
                     'preference': quality(thumb_key)
-                })
-
+                } for thumb_key in THUMBNAILS if api_res.get(thumb_key)]
         return {
             'id': song_id,
             'title': api_res['name'],

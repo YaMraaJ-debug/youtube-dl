@@ -49,8 +49,7 @@ class ComedyCentralFullEpisodesIE(MTVServicesInfoExtractor):
         playlist_id = self._match_id(url)
         webpage = self._download_webpage(url, playlist_id)
         mgid = self._extract_triforce_mgid(webpage, data_zone='t2_lc_promo1')
-        videos_info = self._get_videos_info(mgid)
-        return videos_info
+        return self._get_videos_info(mgid)
 
 
 class ToshIE(MTVServicesInfoExtractor):

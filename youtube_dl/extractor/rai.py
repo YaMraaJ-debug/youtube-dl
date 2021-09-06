@@ -95,11 +95,11 @@ class RaiBaseIE(InfoExtractor):
         if not formats and geoprotection is True:
             self.raise_geo_restricted(countries=self._GEO_COUNTRIES)
 
-        return dict((k, v) for k, v in {
-            'is_live': is_live,
-            'duration': duration,
-            'formats': formats,
-        }.items() if v is not None)
+        return {k: v for k, v in {
+                'is_live': is_live,
+                'duration': duration,
+                'formats': formats,
+            }.items() if v is not None}
 
     @staticmethod
     def _extract_subtitles(url, subtitle_url):
@@ -107,12 +107,12 @@ class RaiBaseIE(InfoExtractor):
         if subtitle_url and isinstance(subtitle_url, compat_str):
             subtitle_url = urljoin(url, subtitle_url)
             STL_EXT = '.stl'
-            SRT_EXT = '.srt'
             subtitles['it'] = [{
                 'ext': 'stl',
                 'url': subtitle_url,
             }]
             if subtitle_url.endswith(STL_EXT):
+                SRT_EXT = '.srt'
                 srt_url = subtitle_url[:-len(STL_EXT)] + SRT_EXT
                 subtitles['it'].append({
                     'ext': 'srt',

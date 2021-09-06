@@ -74,7 +74,7 @@ class FOXIE(AdobePassIE):
                         raise ExtractorError(
                             'This video is only available via cable service provider '
                             'subscription. You may want to use --cookies.', expected=True)
-                messages = ', '.join([e['message'] for e in entitlement_issues])
+                messages = ', '.join(e['message'] for e in entitlement_issues)
                 raise ExtractorError(messages, expected=True)
             raise
 
@@ -84,11 +84,11 @@ class FOXIE(AdobePassIE):
             if mvpd_auth:
                 self._access_token = (self._parse_json(compat_urllib_parse_unquote(
                     mvpd_auth.value), None, fatal=False) or {}).get('accessToken')
-            if not self._access_token:
-                self._access_token = self._call_api(
-                    'login', None, json.dumps({
-                        'deviceId': compat_str(uuid.uuid4()),
-                    }).encode())['accessToken']
+        if not self._access_token:
+            self._access_token = self._call_api(
+                'login', None, json.dumps({
+                    'deviceId': compat_str(uuid.uuid4()),
+                }).encode())['accessToken']
 
     def _real_extract(self, url):
         video_id = self._match_id(url)

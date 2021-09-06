@@ -39,10 +39,17 @@ class NineCNineMediaIE(InfoExtractor):
             raise ExtractorError('This video is DRM protected.', expected=True)
 
         manifest_base_url = content_package_url + 'manifest.'
-        formats = []
-        formats.extend(self._extract_m3u8_formats(
-            manifest_base_url + 'm3u8', content_id, 'mp4',
-            'm3u8_native', m3u8_id='hls', fatal=False))
+        formats = list(
+            self._extract_m3u8_formats(
+                manifest_base_url + 'm3u8',
+                content_id,
+                'mp4',
+                'm3u8_native',
+                m3u8_id='hls',
+                fatal=False,
+            )
+        )
+
         formats.extend(self._extract_f4m_formats(
             manifest_base_url + 'f4m', content_id,
             f4m_id='hds', fatal=False))

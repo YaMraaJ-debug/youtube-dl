@@ -124,7 +124,7 @@ class PlaytvakIE(InfoExtractor):
 
         item = None
         for i in json_info['items']:
-            if i.get('type') == 'video' or i.get('type') == 'stream':
+            if i.get('type') in ['video', 'stream']:
                 item = i
                 break
         if not item:
@@ -151,11 +151,8 @@ class PlaytvakIE(InfoExtractor):
                 # Some streams have mp3 audio which does not play
                 # well with ffmpeg filter aac_adtstoasc
                 preference = -1
-            elif format_ == 'adobe':  # f4m manifest fails with 404 in 80% of requests
+            else:  # f4m manifest fails with 404 in 80% of requests
                 continue
-            else:  # Other formats not supported yet
-                continue
-
             formats.append({
                 'url': video_url,
                 'ext': ext,

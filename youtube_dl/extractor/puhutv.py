@@ -199,7 +199,7 @@ class PuhuTVSerieIE(InfoExtractor):
                 continue
             page = 1
             has_more = True
-            while has_more is True:
+            while has_more:
                 season = self._download_json(
                     'https://galadriel.puhutv.com/seasons/%s' % season_id,
                     season_id, 'Downloading page %s' % page, query={

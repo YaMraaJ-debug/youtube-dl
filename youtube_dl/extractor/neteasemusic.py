@@ -140,14 +140,16 @@ class NetEaseMusicIE(NetEaseMusicBaseIE):
 
         lyrics_expr = r'(\[[0-9]{2}:[0-9]{2}\.[0-9]{2,}\])([^\n]+)'
         original_ts_texts = re.findall(lyrics_expr, original)
-        translation_ts_dict = dict(
-            (time_stamp, text) for time_stamp, text in re.findall(lyrics_expr, translated)
-        )
-        lyrics = '\n'.join([
-            '%s%s / %s' % (time_stamp, text, translation_ts_dict.get(time_stamp, ''))
+        translation_ts_dict = {
+            time_stamp: text
+            for time_stamp, text in re.findall(lyrics_expr, translated)
+        }
+
+        return '\n'.join(
+            '%s%s / %s'
+            % (time_stamp, text, translation_ts_dict.get(time_stamp, ''))
             for time_stamp, text in original_ts_texts
-        ])
-        return lyrics
+        )
 
     def _real_extract(self, url):
         song_id = self._match_id(url)
@@ -176,8 +178,12 @@ class NetEaseMusicIE(NetEaseMusicBaseIE):
             'id': song_id,
             'title': info['name'],
             'alt_title': alt_title,
-            'creator': ' / '.join([artist['name'] for artist in info.get('artists', [])]),
-            'timestamp': self.convert_milliseconds(info.get('album', {}).get('publishTime')),
+            'creator': ' / '.join(
+                artist['name'] for artist in info.get('artists', [])
+            ),
+            'timestamp': self.convert_milliseconds(
+                info.get('album', {}).get('publishTime')
+            ),
             'thumbnail': info.get('album', {}).get('picUrl'),
             'duration': self.convert_milliseconds(info.get('duration', 0)),
             'description': lyrics,
@@ -429,8 +435,7 @@ class NetEaseMusicProgramIE(NetEaseMusicBaseIE):
             'Downloading playlist %s - add --no-playlist to just download the main audio %s'
             % (program_id, info['mainSong']['id']))
 
-        song_ids = [info['mainSong']['id']]
-        song_ids.extend([song['id'] for song in info['songs']])
+        song_ids = [info['mainSong']['id'], *[song['id'] for song in info['songs']]]
         entries = [
             self.url_result('http://music.163.com/#/song?id=%s' % song_id,
                             'NetEaseMusic', song_id)

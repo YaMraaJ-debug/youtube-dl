@@ -99,13 +99,11 @@ class JSInterpreter(object):
                 cur = lvar[idx]
                 val = opfunc(cur, right_val)
                 lvar[idx] = val
-                return val
             else:
                 cur = local_vars.get(m.group('out'))
                 val = opfunc(cur, right_val)
                 local_vars[m.group('out')] = val
-                return val
-
+            return val
         if expr.isdigit():
             return int(expr)
 
@@ -154,9 +152,11 @@ class JSInterpreter(object):
             if arg_str == '':
                 argvals = tuple()
             else:
-                argvals = tuple([
+                argvals = tuple(
                     self.interpret_expression(v, local_vars, allow_recursion)
-                    for v in arg_str.split(',')])
+                    for v in arg_str.split(',')
+                )
+
 
             if member == 'split':
                 assert argvals == ('',)
@@ -174,10 +174,7 @@ class JSInterpreter(object):
             if member == 'splice':
                 assert isinstance(obj, list)
                 index, howMany = argvals
-                res = []
-                for i in range(index, min(index + howMany, len(obj))):
-                    res.append(obj.pop(index))
-                return res
+                return [obj.pop(index) for _ in range(index, min(index + howMany, len(obj)))]
 
             return obj[member](argvals)
 
@@ -201,9 +198,15 @@ class JSInterpreter(object):
             r'^(?P<func>%s)\((?P<args>[a-zA-Z0-9_$,]*)\)$' % _NAME_RE, expr)
         if m:
             fname = m.group('func')
-            argvals = tuple([
-                int(v) if v.isdigit() else local_vars[v]
-                for v in m.group('args').split(',')]) if len(m.group('args')) > 0 else tuple()
+            argvals = (
+                tuple(
+                    int(v) if v.isdigit() else local_vars[v]
+                    for v in m.group('args').split(',')
+                )
+                if len(m.group('args')) > 0
+                else tuple()
+            )
+
             if fname not in self._functions:
                 self._functions[fname] = self.extract_function(fname)
             return self._functions[fname](argvals)

@@ -45,9 +45,7 @@ class HTTPTestRequestHandler(compat_http_server.BaseHTTPRequestHandler):
     def serve(self, range=True, content_length=True):
         self.send_response(200)
         self.send_header('Content-Type', 'video/mp4')
-        size = TEST_SIZE
-        if range:
-            size = self.send_content_range(TEST_SIZE)
+        size = self.send_content_range(TEST_SIZE) if range else TEST_SIZE
         if content_length:
             self.send_header('Content-Length', size)
         self.end_headers()

@@ -653,9 +653,12 @@ class YoutubeDL(object):
                 compat_str(v),
                 restricted=self.params.get('restrictfilenames'),
                 is_id=(k == 'id' or k.endswith('_id')))
-            template_dict = dict((k, v if isinstance(v, compat_numeric_types) else sanitize(k, v))
-                                 for k, v in template_dict.items()
-                                 if v is not None and not isinstance(v, (list, tuple, dict)))
+            template_dict = {
+                k: v if isinstance(v, compat_numeric_types) else sanitize(k, v)
+                for k, v in template_dict.items()
+                if v is not None and not isinstance(v, (list, tuple, dict))
+            }
+
             template_dict = collections.defaultdict(lambda: 'NA', template_dict)
 
             outtmpl = self.params.get('outtmpl', DEFAULT_OUTTMPL)
@@ -701,7 +704,7 @@ class YoutubeDL(object):
             # correspondingly that is not what we want since we need to keep
             # '%%' intact for template dict substitution step. Working around
             # with boundary-alike separator hack.
-            sep = ''.join([random.choice(ascii_letters) for _ in range(32)])
+            sep = ''.join(random.choice(ascii_letters) for _ in range(32))
             outtmpl = outtmpl.replace('%%', '%{0}%'.format(sep)).replace('$$', '${0}$'.format(sep))
 
             # outtmpl should be expand_path'ed before template dict substitution
@@ -728,13 +731,11 @@ class YoutubeDL(object):
             # This can happen when we're just evaluating the playlist
             title = info_dict['title']
             matchtitle = self.params.get('matchtitle', False)
-            if matchtitle:
-                if not re.search(matchtitle, title, re.IGNORECASE):
-                    return '"' + title + '" title did not match pattern "' + matchtitle + '"'
+            if matchtitle and not re.search(matchtitle, title, re.IGNORECASE):
+                return '"' + title + '" title did not match pattern "' + matchtitle + '"'
             rejecttitle = self.params.get('rejecttitle', False)
-            if rejecttitle:
-                if re.search(rejecttitle, title, re.IGNORECASE):
-                    return '"' + title + '" title matched reject pattern "' + rejecttitle + '"'
+            if rejecttitle and re.search(rejecttitle, title, re.IGNORECASE):
+                return '"' + title + '" title matched reject pattern "' + rejecttitle + '"'
         date = info_dict.get('upload_date')
         if date is not None:
             dateRange = self.params.get('daterange', DateRange())
@@ -779,11 +780,7 @@ class YoutubeDL(object):
         if not ie_key and force_generic_extractor:
             ie_key = 'Generic'
 
-        if ie_key:
-            ies = [self.get_info_extractor(ie_key)]
-        else:
-            ies = self._ies
-
+        ies = [self.get_info_extractor(ie_key)] if ie_key else self._ies
         for ie in ies:
             if not ie.suitable(url):
                 continue
@@ -1235,8 +1232,7 @@ class YoutubeDL(object):
 
                 def selector_function(ctx):
                     for f in fs:
-                        for format in f(ctx):
-                            yield format
+                        yield from f(ctx)
                 return selector_function
             elif selector.type == GROUP:
                 selector_function = _build_selector_function(selector.selector)
@@ -1257,8 +1253,7 @@ class YoutubeDL(object):
                     if not formats:
                         return
                     if format_spec == 'all':
-                        for f in formats:
-                            yield f
+                        yield from formats
                     elif format_spec in ['best', 'worst', None]:
                         format_idx = 0 if format_spec == 'worst' else -1
                         audiovideo_formats = [
@@ -1663,13 +1658,12 @@ class YoutubeDL(object):
 
         if self.params.get('allsubtitles', False):
             requested_langs = available_subs.keys()
+        elif self.params.get('subtitleslangs', False):
+            requested_langs = self.params.get('subtitleslangs')
+        elif 'en' in available_subs:
+            requested_langs = ['en']
         else:
-            if self.params.get('subtitleslangs', False):
-                requested_langs = self.params.get('subtitleslangs')
-            elif 'en' in available_subs:
-                requested_langs = ['en']
-            else:
-                requested_langs = [list(available_subs.keys())[0]]
+            requested_langs = [list(available_subs.keys())[0]]
 
         formats_query = self.params.get('subtitlesformat', 'best')
         formats_preference = formats_query.split('/') if formats_query else []
@@ -2038,18 +2032,16 @@ class YoutubeDL(object):
             self.process_ie_result(info, download=True)
         except DownloadError:
             webpage_url = info.get('webpage_url')
-            if webpage_url is not None:
-                self.report_warning('The info failed to download, trying with "%s"' % webpage_url)
-                return self.download([webpage_url])
-            else:
+            if webpage_url is None:
                 raise
+            self.report_warning('The info failed to download, trying with "%s"' % webpage_url)
+            return self.download([webpage_url])
         return self._download_retcode
 
     @staticmethod
     def filter_requested_info(info_dict):
-        return dict(
-            (k, v) for k, v in info_dict.items()
-            if k not in ['requested_formats', 'requested_subtitles'])
+        return {k: v for k, v in info_dict.items()
+                if k not in ['requested_formats', 'requested_subtitles']}
 
     def post_process(self, filename, ie_info):
         """Run all the postprocessors on the given file."""
@@ -2128,15 +2120,16 @@ class YoutubeDL(object):
         if format.get('resolution') is not None:
             return format['resolution']
         if format.get('height') is not None:
-            if format.get('width') is not None:
-                res = '%sx%s' % (format['width'], format['height'])
-            else:
-                res = '%sp' % format['height']
+            return (
+                '%sx%s' % (format['width'], format['height'])
+                if format.get('width') is not None
+                else '%sp' % format['height']
+            )
+
         elif format.get('width') is not None:
-            res = '%dx?' % format['width']
+            return '%dx?' % format['width']
         else:
-            res = default
-        return res
+            return default
 
     def _format_note(self, fdict):
         res = ''
@@ -2172,10 +2165,7 @@ class YoutubeDL(object):
         if fdict.get('acodec') is not None:
             if res:
                 res += ', '
-            if fdict['acodec'] == 'none':
-                res += 'video only'
-            else:
-                res += '%-5s' % fdict['acodec']
+            res += 'video only' if fdict['acodec'] == 'none' else '%-5s' % fdict['acodec']
         elif fdict.get('abr') is not None:
             if res:
                 res += ', '

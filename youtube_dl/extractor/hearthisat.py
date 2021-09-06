@@ -70,10 +70,7 @@ class HearThisAtIE(InfoExtractor):
         track = self._download_json(req, track_id, 'Downloading playlist')[0]
         title = '{artist:s} - {title:s}'.format(**track)
 
-        categories = None
-        if track.get('category'):
-            categories = [track['category']]
-
+        categories = [track['category']] if track.get('category') else None
         description = self._og_search_description(webpage)
         thumbnail = self._og_search_thumbnail(webpage)
 

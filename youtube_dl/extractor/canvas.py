@@ -288,12 +288,14 @@ class VrtNUIE(GigyaBaseIE):
                         'email': auth_info['profile']['email'],
                     }).encode('utf-8'))
             except ExtractorError as e:
-                if isinstance(e.cause, compat_HTTPError) and e.cause.code == 401:
-                    login_attempt += 1
-                    self.report_warning('Authentication failed')
-                    self._sleep(1, None, msg_template='Waiting for %(timeout)s seconds before trying again')
-                else:
+                if (
+                    not isinstance(e.cause, compat_HTTPError)
+                    or e.cause.code != 401
+                ):
                     raise e
+                login_attempt += 1
+                self.report_warning('Authentication failed')
+                self._sleep(1, None, msg_template='Waiting for %(timeout)s seconds before trying again')
             else:
                 break
 

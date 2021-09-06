@@ -47,9 +47,7 @@ class CCCIE(InfoExtractor):
                 continue
             language = recording.get('language')
             folder = recording.get('folder')
-            format_id = None
-            if language:
-                format_id = language
+            format_id = language or None
             if folder:
                 if language:
                     format_id += '-' + folder

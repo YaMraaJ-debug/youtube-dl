@@ -79,7 +79,12 @@ class PandoraTVIE(InfoExtractor):
             qs = compat_urlparse.parse_qs(compat_urlparse.urlparse(url).query)
             video_id = qs.get('prgid', [None])[0]
             user_id = qs.get('ch_userid', [None])[0]
-            if any(not f for f in (video_id, user_id,)):
+            if not all(
+                (
+                    video_id,
+                    user_id,
+                )
+            ):
                 raise ExtractorError('Invalid URL', expected=True)
 
         data = self._download_json(

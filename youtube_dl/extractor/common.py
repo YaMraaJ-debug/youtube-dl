@@ -459,67 +459,68 @@ class InfoExtractor(object):
                     (similar to _GEO_IP_BLOCKS)
 
         """
-        if not self._x_forwarded_for_ip:
+        if self._x_forwarded_for_ip:
 
-            # Geo bypass mechanism is explicitly disabled by user
-            if not self._downloader.params.get('geo_bypass', True):
-                return
+            return
+        # Geo bypass mechanism is explicitly disabled by user
+        if not self._downloader.params.get('geo_bypass', True):
+            return
 
-            if not geo_bypass_context:
-                geo_bypass_context = {}
+        if not geo_bypass_context:
+            geo_bypass_context = {}
 
-            # Backward compatibility: previously _initialize_geo_bypass
-            # expected a list of countries, some 3rd party code may still use
-            # it this way
-            if isinstance(geo_bypass_context, (list, tuple)):
-                geo_bypass_context = {
-                    'countries': geo_bypass_context,
-                }
+        # Backward compatibility: previously _initialize_geo_bypass
+        # expected a list of countries, some 3rd party code may still use
+        # it this way
+        if isinstance(geo_bypass_context, (list, tuple)):
+            geo_bypass_context = {
+                'countries': geo_bypass_context,
+            }
 
-            # The whole point of geo bypass mechanism is to fake IP
-            # as X-Forwarded-For HTTP header based on some IP block or
-            # country code.
+        # The whole point of geo bypass mechanism is to fake IP
+        # as X-Forwarded-For HTTP header based on some IP block or
+        # country code.
 
-            # Path 1: bypassing based on IP block in CIDR notation
+        # Path 1: bypassing based on IP block in CIDR notation
 
-            # Explicit IP block specified by user, use it right away
-            # regardless of whether extractor is geo bypassable or not
-            ip_block = self._downloader.params.get('geo_bypass_ip_block', None)
+        # Explicit IP block specified by user, use it right away
+        # regardless of whether extractor is geo bypassable or not
+        ip_block = self._downloader.params.get('geo_bypass_ip_block', None)
 
-            # Otherwise use random IP block from geo bypass context but only
-            # if extractor is known as geo bypassable
-            if not ip_block:
-                ip_blocks = geo_bypass_context.get('ip_blocks')
-                if self._GEO_BYPASS and ip_blocks:
-                    ip_block = random.choice(ip_blocks)
+        # Otherwise use random IP block from geo bypass context but only
+        # if extractor is known as geo bypassable
+        if not ip_block:
+            ip_blocks = geo_bypass_context.get('ip_blocks')
+            if self._GEO_BYPASS and ip_blocks:
+                ip_block = random.choice(ip_blocks)
 
-            if ip_block:
-                self._x_forwarded_for_ip = GeoUtils.random_ipv4(ip_block)
-                if self._downloader.params.get('verbose', False):
-                    self._downloader.to_screen(
-                        '[debug] Using fake IP %s as X-Forwarded-For.'
-                        % self._x_forwarded_for_ip)
-                return
+        if ip_block:
+            self._x_forwarded_for_ip = GeoUtils.random_ipv4(ip_block)
+            if self._downloader.params.get('verbose', False):
+                self._downloader.to_screen(
+                    '[debug] Using fake IP %s as X-Forwarded-For.'
+                    % self._x_forwarded_for_ip)
+            return
 
-            # Path 2: bypassing based on country code
+        # Path 2: bypassing based on country code
 
-            # Explicit country code specified by user, use it right away
-            # regardless of whether extractor is geo bypassable or not
-            country = self._downloader.params.get('geo_bypass_country', None)
+        # Explicit country code specified by user, use it right away
+        # regardless of whether extractor is geo bypassable or not
+        country = self._downloader.params.get('geo_bypass_country', None)
 
-            # Otherwise use random country code from geo bypass context but
-            # only if extractor is known as geo bypassable
-            if not country:
-                countries = geo_bypass_context.get('countries')
-                if self._GEO_BYPASS and countries:
-                    country = random.choice(countries)
+        # Otherwise use random country code from geo bypass context but
+        # only if extractor is known as geo bypassable
+        if not country:
+            countries = geo_bypass_context.get('countries')
+            if self._GEO_BYPASS and countries:
+                country = random.choice(countries)
 
-            if country:
-                self._x_forwarded_for_ip = GeoUtils.random_ipv4(country)
-                if self._downloader.params.get('verbose', False):
-                    self._downloader.to_screen(
-                        '[debug] Using fake IP %s (%s) as X-Forwarded-For.'
-                        % (self._x_forwarded_for_ip, country.upper()))
+        if country:
+            self._x_forwarded_for_ip = GeoUtils.random_ipv4(country)
+            if self._downloader.params.get('verbose', False):
+                self._downloader.to_screen(
+                    '[debug] Using fake IP %s (%s) as X-Forwarded-For.'
+                    % (self._x_forwarded_for_ip, country.upper()))
 
     def extract(self, url):
         """Extracts URL information and returns it in list of dicts."""
@@ -611,9 +612,8 @@ class InfoExtractor(object):
         # restriction by faking this header's value to IP that belongs to some
         # geo unrestricted country. We will do so once we encounter any
         # geo restriction error.
-        if self._x_forwarded_for_ip:
-            if 'X-Forwarded-For' not in headers:
-                headers['X-Forwarded-For'] = self._x_forwarded_for_ip
+        if self._x_forwarded_for_ip and 'X-Forwarded-For' not in headers:
+            headers['X-Forwarded-For'] = self._x_forwarded_for_ip
 
         if isinstance(url_or_request, compat_urllib_request.Request):
             url_or_request = update_Request(
@@ -626,14 +626,15 @@ class InfoExtractor(object):
         try:
             return self._downloader.urlopen(url_or_request)
         except (compat_urllib_error.URLError, compat_http_client.HTTPException, socket.error) as err:
-            if isinstance(err, compat_urllib_error.HTTPError):
-                if self.__can_accept_status_code(err, expected_status):
-                    # Retain reference to error to prevent file object from
-                    # being closed before it can be read. Works around the
-                    # effects of <https://bugs.python.org/issue15002>
-                    # introduced in Python 3.4.1.
-                    err.fp._error = err
-                    return err.fp
+            if isinstance(
+                err, compat_urllib_error.HTTPError
+            ) and self.__can_accept_status_code(err, expected_status):
+                # Retain reference to error to prevent file object from
+                # being closed before it can be read. Works around the
+                # effects of <https://bugs.python.org/issue15002>
+                # introduced in Python 3.4.1.
+                err.fp._error = err
+                return err.fp
 
             if errnote is False:
                 return False
@@ -643,9 +644,8 @@ class InfoExtractor(object):
             errmsg = '%s: %s' % (errnote, error_to_compat_str(err))
             if fatal:
                 raise ExtractorError(errmsg, sys.exc_info()[2], cause=err)
-            else:
-                self._downloader.report_warning(errmsg)
-                return False
+            self._downloader.report_warning(errmsg)
+            return False
 
     def _download_webpage_handle(self, url_or_request, video_id, note=None, errnote=None, fatal=True, encoding=None, data=None, headers={}, query={}, expected_status=None):
         """
@@ -786,7 +786,7 @@ class InfoExtractor(object):
 
         success = False
         try_count = 0
-        while success is False:
+        while not success:
             try:
                 res = self._download_webpage_handle(
                     url_or_request, video_id, note, errnote, fatal,
@@ -800,9 +800,8 @@ class InfoExtractor(object):
                 self._sleep(timeout, video_id)
         if res is False:
             return res
-        else:
-            content, _ = res
-            return content
+        content, _ = res
+        return content
 
     def _download_xml_handle(
             self, url_or_request, video_id, note='Downloading XML',
@@ -1025,12 +1024,11 @@ class InfoExtractor(object):
         if self._downloader.params.get('usenetrc', False):
             try:
                 info = netrc.netrc().authenticators(netrc_machine)
-                if info is not None:
-                    username = info[0]
-                    password = info[2]
-                else:
+                if info is None:
                     raise netrc.NetrcParseError(
                         'No authenticators for %s' % netrc_machine)
+                username = info[0]
+                password = info[2]
             except (IOError, netrc.NetrcParseError) as err:
                 self._downloader.report_warning(
                     'parsing .netrc: %s' % error_to_compat_str(err))
@@ -1541,10 +1539,8 @@ class InfoExtractor(object):
             # stream-level manifest, and only set-level manifests may refer to
             # external resources.  See section 11.4 and section 4 of F4M spec
             if bootstrap_info is None:
-                media_url = None
                 # @href is introduced in 2.0, see section 11.6 of F4M spec
-                if manifest_version == '2.0':
-                    media_url = media_el.attrib.get('href')
+                media_url = media_el.attrib.get('href') if manifest_version == '2.0' else None
                 if media_url is None:
                     media_url = media_el.attrib.get('url')
                 if not media_url:
@@ -1682,10 +1678,7 @@ class InfoExtractor(object):
                 return
             media_url = media.get('URI')
             if media_url:
-                format_id = []
-                for v in (m3u8_id, group_id, name):
-                    if v:
-                        format_id.append(v)
+                format_id = [v for v in (m3u8_id, group_id, name) if v]
                 f = {
                     'format_id': '-'.join(format_id),
                     'url': format_url(media_url),
@@ -2924,7 +2917,7 @@ class InfoExtractor(object):
     def _merge_subtitle_items(subtitle_list1, subtitle_list2):
         """ Merge subtitle items for one language. Items with duplicated URLs
         will be dropped. """
-        list1_urls = set([item['url'] for item in subtitle_list1])
+        list1_urls = {item['url'] for item in subtitle_list1}
         ret = list(subtitle_list1)
         ret.extend([item for item in subtitle_list2 if item['url'] not in list1_urls])
         return ret

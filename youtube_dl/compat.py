@@ -2454,7 +2454,7 @@ except ImportError:  # Python 2
             return e
 
         def encode_dict(d):
-            return dict((encode_elem(k), encode_elem(v)) for k, v in d.items())
+            return {encode_elem(k): encode_elem(v) for k, v in d.items()}
 
         def encode_list(l):
             return [encode_elem(e) for e in l]
@@ -2540,8 +2540,7 @@ else:
         def _etree_iter(root):
             for el in root.findall('*'):
                 yield el
-                for sub in _etree_iter(el):
-                    yield sub
+                yield from _etree_iter(el)
 
     # on 2.6 XML doesn't have a parser argument, function copied from CPython
     # 2.7 source
@@ -2742,7 +2741,7 @@ else:
                 return path
             i, n = 1, len(path)
             while i < n and path[i] not in '/\\':
-                i = i + 1
+                i += 1
 
             if 'HOME' in os.environ:
                 userhome = compat_getenv('HOME')
@@ -2807,7 +2806,7 @@ try:
     _testfunc(**{'x': 0})
 except TypeError:
     def compat_kwargs(kwargs):
-        return dict((bytes(k), v) for k, v in kwargs.items())
+        return {bytes(k): v for k, v in kwargs.items()}
 else:
     compat_kwargs = lambda kwargs: kwargs
 
@@ -2865,8 +2864,7 @@ def workaround_optparse_bug9161():
                 v.encode('ascii', 'replace') if isinstance(v, compat_str)
                 else v)
             bargs = [enc(a) for a in args]
-            bkwargs = dict(
-                (k, enc(v)) for k, v in kwargs.items())
+            bkwargs = {k: enc(v) for k, v in kwargs.items()}
             return real_add_option(self, *bargs, **bkwargs)
         optparse.OptionGroup.add_option = _compat_add_option
 
@@ -2878,16 +2876,9 @@ else:
 
     def compat_get_terminal_size(fallback=(80, 24)):
         columns = compat_getenv('COLUMNS')
-        if columns:
-            columns = int(columns)
-        else:
-            columns = None
+        columns = int(columns) if columns else None
         lines = compat_getenv('LINES')
-        if lines:
-            lines = int(lines)
-        else:
-            lines = None
-
+        lines = int(lines) if lines else None
         if columns is None or lines is None or columns <= 0 or lines <= 0:
             try:
                 sp = subprocess.Popen(
@@ -2898,10 +2889,10 @@ else:
             except Exception:
                 _columns, _lines = _terminal_size(*fallback)
 
-            if columns is None or columns <= 0:
-                columns = _columns
-            if lines is None or lines <= 0:
-                lines = _lines
+        if columns is None or columns <= 0:
+            columns = _columns
+        if lines is None or lines <= 0:
+            lines = _lines
         return _terminal_size(columns, lines)
 
 try:

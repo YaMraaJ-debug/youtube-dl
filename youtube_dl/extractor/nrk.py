@@ -574,8 +574,7 @@ class NRKTVSeriesIE(NRKTVSerieBaseIE):
             title = try_get(series, lambda x: x['titles']['title'], compat_str)
             description = try_get(
                 series, lambda x: x['titles']['subtitle'], compat_str)
-            entries = []
-            entries.extend(self._extract_seasons(series.get('seasons')))
+            entries = list(self._extract_seasons(series.get('seasons')))
             entries.extend(self._extract_entries(series.get('instalments')))
             entries.extend(self._extract_episodes(series.get('extraMaterial')))
             return self.playlist_result(entries, series_id, title, description)
