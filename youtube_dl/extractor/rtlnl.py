@@ -100,20 +100,14 @@ class RtlNlIE(InfoExtractor):
             m3u8_url, uuid, 'mp4', m3u8_id='hls', fatal=False)
         self._sort_formats(formats)
 
-        thumbnails = []
-
-        for p in ('poster_base_url', '"thumb_base_url"'):
-            if not meta.get(p):
-                continue
-
-            thumbnails.append({
+        thumbnails = [{
                 'url': self._proto_relative_url(meta[p] + uuid),
                 'width': int_or_none(self._search_regex(
                     r'/sz=([0-9]+)', meta[p], 'thumbnail width', fatal=False)),
                 'height': int_or_none(self._search_regex(
                     r'/sz=[0-9]+x([0-9]+)',
                     meta[p], 'thumbnail height', fatal=False))
-            })
+            } for p in ('poster_base_url', '"thumb_base_url"') if meta.get(p)]
 
         return {
             'id': uuid,

@@ -90,10 +90,16 @@ class RoosterTeethIE(InfoExtractor):
                 api_episode_url + '/videos', display_id,
                 'Downloading video JSON metadata')['data'][0]['attributes']['url']
         except ExtractorError as e:
-            if isinstance(e.cause, compat_HTTPError) and e.cause.code == 403:
-                if self._parse_json(e.cause.read().decode(), display_id).get('access') is False:
-                    self.raise_login_required(
-                        '%s is only available for FIRST members' % display_id)
+            if (
+                isinstance(e.cause, compat_HTTPError)
+                and e.cause.code == 403
+                and self._parse_json(e.cause.read().decode(), display_id).get(
+                    'access'
+                )
+                is False
+            ):
+                self.raise_login_required(
+                    '%s is only available for FIRST members' % display_id)
             raise
 
         formats = self._extract_m3u8_formats(

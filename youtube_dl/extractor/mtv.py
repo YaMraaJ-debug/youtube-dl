@@ -176,13 +176,9 @@ class MTVServicesInfoExtractor(InfoExtractor):
             raise ExtractorError('Could not find video title')
         title = title.strip()
 
-        # This a short id that's used in the webpage urls
-        mtvn_id = None
         mtvn_id_node = find_xpath_attr(itemdoc, './/{http://search.yahoo.com/mrss/}category',
                                        'scheme', 'urn:mtvn:id')
-        if mtvn_id_node is not None:
-            mtvn_id = mtvn_id_node.text
-
+        mtvn_id = mtvn_id_node.text if mtvn_id_node is not None else None
         formats = self._extract_video_formats(mediagen_doc, mtvn_id, video_id)
 
         # Some parts of complete video may be missing (e.g. missing Act 3 in
@@ -284,8 +280,7 @@ class MTVServicesInfoExtractor(InfoExtractor):
         title = url_basename(url)
         webpage = self._download_webpage(url, title)
         mgid = self._extract_mgid(webpage)
-        videos_info = self._get_videos_info(mgid)
-        return videos_info
+        return self._get_videos_info(mgid)
 
 
 class MTVServicesEmbeddedIE(MTVServicesInfoExtractor):

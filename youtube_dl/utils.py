@@ -2061,19 +2061,15 @@ def sanitize_open(filename, open_mode):
         alt_filename = sanitize_path(filename)
         if alt_filename == filename:
             raise
-        else:
-            # An exception here should be caught in the caller
-            stream = open(encodeFilename(alt_filename), open_mode)
-            return (stream, alt_filename)
+        # An exception here should be caught in the caller
+        stream = open(encodeFilename(alt_filename), open_mode)
+        return (stream, alt_filename)
 
 
 def timeconvert(timestr):
     """Convert RFC 2822 defined time string into system timestamp"""
-    timestamp = None
     timetuple = email.utils.parsedate_tz(timestr)
-    if timetuple is not None:
-        timestamp = email.utils.mktime_tz(timetuple)
-    return timestamp
+    return email.utils.mktime_tz(timetuple) if timetuple is not None else None
 
 
 def sanitize_filename(s, restricted=False, is_id=False):
@@ -2306,13 +2302,12 @@ def make_HTTPS_handler(params, **kwargs):
 
     if sys.version_info < (3, 2):
         return YoutubeDLHTTPSHandler(params, **kwargs)
-    else:  # Python < 3.4
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        context.verify_mode = (ssl.CERT_NONE
-                               if opts_no_check_certificate
-                               else ssl.CERT_REQUIRED)
-        context.set_default_verify_paths()
-        return YoutubeDLHTTPSHandler(params, context=context, **kwargs)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.verify_mode = (ssl.CERT_NONE
+                           if opts_no_check_certificate
+                           else ssl.CERT_REQUIRED)
+    context.set_default_verify_paths()
+    return YoutubeDLHTTPSHandler(params, context=context, **kwargs)
 
 
 def bug_reports_message():
@@ -2539,7 +2534,12 @@ def handle_youtubedl_headers(headers):
     filtered_headers = headers
 
     if 'Youtubedl-no-compression' in filtered_headers:
-        filtered_headers = dict((k, v) for k, v in filtered_headers.items() if k.lower() != 'accept-encoding')
+        filtered_headers = {
+            k: v
+            for k, v in filtered_headers.items()
+            if k.lower() != 'accept-encoding'
+        }
+
         del filtered_headers['Youtubedl-no-compression']
 
     return filtered_headers
@@ -2779,18 +2779,9 @@ class YoutubeDLCookieJar(compat_cookiejar.MozillaCookieJar):
                     continue
                 if not ignore_expires and cookie.is_expired(now):
                     continue
-                if cookie.secure:
-                    secure = 'TRUE'
-                else:
-                    secure = 'FALSE'
-                if cookie.domain.startswith('.'):
-                    initial_dot = 'TRUE'
-                else:
-                    initial_dot = 'FALSE'
-                if cookie.expires is not None:
-                    expires = compat_str(cookie.expires)
-                else:
-                    expires = ''
+                secure = 'TRUE' if cookie.secure else 'FALSE'
+                initial_dot = 'TRUE' if cookie.domain.startswith('.') else 'FALSE'
+                expires = compat_str(cookie.expires) if cookie.expires is not None else ''
                 if cookie.value is None:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
                     # with no name, whereas http.cookiejar regards it as a
@@ -3166,9 +3157,13 @@ def write_string(s, out=None, encoding=None):
         out = sys.stderr
     assert type(s) == compat_str
 
-    if sys.platform == 'win32' and encoding is None and hasattr(out, 'fileno'):
-        if _windows_write_string(s, out):
-            return
+    if (
+        sys.platform == 'win32'
+        and encoding is None
+        and hasattr(out, 'fileno')
+        and _windows_write_string(s, out)
+    ):
+        return
 
     if ('b' in getattr(out, 'mode', '')
             or sys.version_info[0] < 3):  # Python 2 lies about mode of sys.stderr
@@ -3344,10 +3339,7 @@ def format_bytes(bytes):
         return 'N/A'
     if type(bytes) is str:
         bytes = float(bytes)
-    if bytes == 0.0:
-        exponent = 0
-    else:
-        exponent = int(math.log(bytes, 1024.0))
+    exponent = 0 if bytes == 0.0 else int(math.log(bytes, 1024.0))
     suffix = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'][exponent]
     converted = float(bytes) / float(1024 ** exponent)
     return '%.2f%s' % (converted, suffix)
@@ -3525,12 +3517,7 @@ def setproctitle(title):
 
     try:
         libc = ctypes.cdll.LoadLibrary('libc.so.6')
-    except OSError:
-        return
-    except TypeError:
-        # LoadLibrary in Windows Python 2.7.13 only expects
-        # a bytestring, but since unicode_literals turns
-        # every string into a unicode string, it fails.
+    except (OSError, TypeError):
         return
     title_bytes = title.encode('utf-8')
     buf = ctypes.create_string_buffer(len(title_bytes))
@@ -3593,9 +3580,8 @@ class PUTRequest(compat_urllib_request.Request):
 
 
 def int_or_none(v, scale=1, default=None, get_attr=None, invscale=1):
-    if get_attr:
-        if v is not None:
-            v = getattr(v, get_attr, None)
+    if get_attr and v is not None:
+        v = getattr(v, get_attr, None)
     if v == '':
         v = None
     if v is None:
@@ -3778,9 +3764,7 @@ class OnDemandPagedList(PagedList):
             if start >= nextfirstid:
                 continue
 
-            page_results = None
-            if self._use_cache:
-                page_results = self._cache.get(pagenum)
+            page_results = self._cache.get(pagenum) if self._use_cache else None
             if page_results is None:
                 page_results = list(self._pagefunc(pagenum))
             if self._use_cache:
@@ -4124,8 +4108,8 @@ def limit_length(s, length):
     """ Add ellipses to overly long strings """
     if s is None:
         return None
-    ELLIPSES = '...'
     if len(s) > length:
+        ELLIPSES = '...'
         return s[:length - len(ELLIPSES)] + ELLIPSES
     return s
 
@@ -4391,9 +4375,8 @@ def match_filter_func(filter_str):
     def _match_func(info_dict):
         if match_str(filter_str, info_dict):
             return None
-        else:
-            video_title = info_dict.get('title', info_dict.get('id', 'video'))
-            return '%s does not pass filter %s, skipping ..' % (video_title, filter_str)
+        video_title = info_dict.get('title', info_dict.get('id', 'video'))
+        return '%s does not pass filter %s, skipping ..' % (video_title, filter_str)
     return _match_func
 
 
@@ -5375,7 +5358,7 @@ def long_to_bytes(n, blocksize=0):
     n = int(n)
     while n > 0:
         s = compat_struct_pack('>I', n & 0xffffffff) + s
-        n = n >> 32
+        n >>= 32
     # strip off leading zeros
     for i in range(len(s)):
         if s[i] != b'\000'[0]:
@@ -5403,7 +5386,7 @@ def bytes_to_long(s):
     if length % 4:
         extra = (4 - length % 4)
         s = b'\000' * extra + s
-        length = length + extra
+        length += extra
     for i in range(0, length, 4):
         acc = (acc << 32) + compat_struct_unpack('>I', s[i:i + 4])[0]
     return acc
@@ -5679,19 +5662,17 @@ def write_xattr(path, key, value):
                 if p.returncode != 0:
                     raise XAttrMetadataError(p.returncode, stderr)
 
+            elif sys.platform.startswith('linux'):
+                raise XAttrUnavailableError(
+                    "Couldn't find a tool to set the xattrs. "
+                    "Install either the python 'pyxattr' or 'xattr' "
+                    "modules, or the GNU 'attr' package "
+                    "(which contains the 'setfattr' tool).")
             else:
-                # On Unix, and can't find pyxattr, setfattr, or xattr.
-                if sys.platform.startswith('linux'):
-                    raise XAttrUnavailableError(
-                        "Couldn't find a tool to set the xattrs. "
-                        "Install either the python 'pyxattr' or 'xattr' "
-                        "modules, or the GNU 'attr' package "
-                        "(which contains the 'setfattr' tool).")
-                else:
-                    raise XAttrUnavailableError(
-                        "Couldn't find a tool to set the xattrs. "
-                        "Install either the python 'xattr' module, "
-                        "or the 'xattr' binary.")
+                raise XAttrUnavailableError(
+                    "Couldn't find a tool to set the xattrs. "
+                    "Install either the python 'xattr' module, "
+                    "or the 'xattr' binary.")
 
 
 def random_birthday(year_field, month_field, day_field):

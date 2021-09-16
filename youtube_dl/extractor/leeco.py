@@ -81,10 +81,8 @@ class LeIE(InfoExtractor):
 
     # ror() and calc_time_key() are reversed from a embedded swf file in LetvPlayer.swf
     def ror(self, param1, param2):
-        _loc3_ = 0
-        while _loc3_ < param2:
+        for _loc3_ in range(param2):
             param1 = urshift(param1, 1) + ((param1 & 1) << 31)
-            _loc3_ += 1
         return param1
 
     def calc_time_key(self, param1):
@@ -296,7 +294,7 @@ class LetvCloudIE(InfoExtractor):
         elif obj['cf'] == 'html5':
             salt = 'fbeh5player12c43eccf2bec3300344'
             items = ['cf', 'ran', 'uu', 'bver', 'vu']
-        input_data = ''.join([item + obj[item] for item in items]) + salt
+        input_data = ''.join(item + obj[item] for item in items) + salt
         obj['sign'] = hashlib.md5(input_data.encode('utf-8')).hexdigest()
 
     def _get_formats(self, cf, uu, vu, media_id):

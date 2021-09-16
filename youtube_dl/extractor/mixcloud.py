@@ -74,9 +74,10 @@ class MixcloudIE(MixcloudBaseIE):
     @staticmethod
     def _decrypt_xor_cipher(key, ciphertext):
         """Encrypt/Decrypt XOR cipher. Both ways are possible because it's XOR."""
-        return ''.join([
+        return ''.join(
             compat_chr(compat_ord(ch) ^ compat_ord(k))
-            for ch, k in compat_zip(ciphertext, itertools.cycle(key))])
+            for ch, k in compat_zip(ciphertext, itertools.cycle(key))
+        )
 
     def _real_extract(self, url):
         username, slug = re.match(self._VALID_URL, url).groups()
@@ -216,10 +217,7 @@ class MixcloudPlaylistBaseIE(MixcloudBaseIE):
     def _real_extract(self, url):
         username, slug = re.match(self._VALID_URL, url).groups()
         username = compat_urllib_parse_unquote(username)
-        if not slug:
-            slug = 'uploads'
-        else:
-            slug = compat_urllib_parse_unquote(slug)
+        slug = 'uploads' if not slug else compat_urllib_parse_unquote(slug)
         playlist_id = '%s_%s' % (username, slug)
 
         is_playlist_type = self._ROOT_TYPE == 'playlist'

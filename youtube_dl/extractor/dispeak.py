@@ -73,17 +73,15 @@ class DigitallySpeakingIE(InfoExtractor):
         return video_formats
 
     def _parse_flv(self, metadata):
-        formats = []
         akamai_url = xpath_text(metadata, './akamaiHost', fatal=True)
         audios = metadata.findall('./audios/audio')
-        for audio in audios:
-            formats.append({
+        formats = [{
                 'url': 'rtmp://%s/ondemand?ovpfv=1.1' % akamai_url,
                 'play_path': remove_end(audio.get('url'), '.flv'),
                 'ext': 'flv',
                 'vcodec': 'none',
                 'format_id': audio.get('code'),
-            })
+            } for audio in audios]
         slide_video_path = xpath_text(metadata, './slideVideo', fatal=True)
         formats.append({
             'url': 'rtmp://%s/ondemand?ovpfv=1.1' % akamai_url,

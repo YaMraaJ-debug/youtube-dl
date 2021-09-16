@@ -114,16 +114,18 @@ class QQMusicIE(InfoExtractor):
             mid, note='Retrieve vkey', errnote='Unable to get vkey',
             transform_source=strip_jsonp)['key']
 
-        formats = []
-        for format_id, details in self._FORMATS.items():
-            formats.append({
+        formats = [
+            {
                 'url': 'http://cc.stream.qqmusic.qq.com/%s%s.%s?vkey=%s&guid=%s&fromtag=0'
-                       % (details['prefix'], mid, details['ext'], vkey, guid),
+                % (details['prefix'], mid, details['ext'], vkey, guid),
                 'format': format_id,
                 'format_id': format_id,
                 'preference': details['preference'],
                 'abr': details.get('abr'),
-            })
+            }
+            for format_id, details in self._FORMATS.items()
+        ]
+
         self._check_formats(formats, mid)
         self._sort_formats(formats)
 

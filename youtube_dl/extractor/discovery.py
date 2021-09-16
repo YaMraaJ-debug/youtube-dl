@@ -77,13 +77,19 @@ class DiscoveryIE(DiscoveryGoBaseIE):
 
         if not access_token:
             access_token = self._download_json(
-                'https://%s.com/anonymous' % site, display_id,
-                'Downloading token JSON metadata', query={
+                'https://%s.com/anonymous' % site,
+                display_id,
+                'Downloading token JSON metadata',
+                query={
                     'authRel': 'authorization',
                     'client_id': '3020a40c2356a645b4b4',
-                    'nonce': ''.join([random.choice(string.ascii_letters) for _ in range(32)]),
+                    'nonce': ''.join(
+                        random.choice(string.ascii_letters) for _ in range(32)
+                    ),
                     'redirectUri': 'https://www.discovery.com/',
-                })['access_token']
+                },
+            )['access_token']
+
 
         headers = self.geo_verification_headers()
         headers['Authorization'] = 'Bearer ' + access_token

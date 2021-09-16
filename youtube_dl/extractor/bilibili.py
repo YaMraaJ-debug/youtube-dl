@@ -244,17 +244,16 @@ class BiliBiliIE(InfoExtractor):
 
         if len(entries) == 1:
             return entries[0]
-        else:
-            for idx, entry in enumerate(entries):
-                entry['id'] = '%s_part%d' % (video_id, (idx + 1))
+        for idx, entry in enumerate(entries):
+            entry['id'] = '%s_part%d' % (video_id, (idx + 1))
 
-            return {
-                '_type': 'multi_video',
-                'id': video_id,
-                'title': title,
-                'description': description,
-                'entries': entries,
-            }
+        return {
+            '_type': 'multi_video',
+            'id': video_id,
+            'title': title,
+            'description': description,
+            'entries': entries,
+        }
 
 
 class BiliBiliBangumiIE(InfoExtractor):
@@ -372,15 +371,12 @@ class BilibiliAudioIE(BilibiliAudioBaseIE):
         title = song['title']
         statistic = song.get('statistic') or {}
 
-        subtitles = None
         lyric = song.get('lyric')
-        if lyric:
-            subtitles = {
+        subtitles = {
                 'origin': [{
                     'url': lyric,
                 }]
-            }
-
+            } if lyric else None
         return {
             'id': au_id,
             'title': title,

@@ -352,11 +352,8 @@ class AVconvFD(FFmpegFD):
     pass
 
 
-_BY_NAME = dict(
-    (klass.get_basename(), klass)
-    for name, klass in globals().items()
-    if name.endswith('FD') and name != 'ExternalFD'
-)
+_BY_NAME = {klass.get_basename(): klass for name, klass in globals().items()
+    if name.endswith('FD') and name != 'ExternalFD'}
 
 
 def list_external_downloaders():

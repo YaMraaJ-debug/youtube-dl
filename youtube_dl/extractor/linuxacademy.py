@@ -66,9 +66,12 @@ class LinuxAcademyIE(InfoExtractor):
             return
 
         def random_string():
-            return ''.join([
-                random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._~')
-                for _ in range(32)])
+            return ''.join(
+                random.choice(
+                    '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._~'
+                )
+                for _ in range(32)
+            )
 
         webpage, urlh = self._download_webpage_handle(
             self._AUTHORIZE_URL, None, 'Downloading authorize page', query={
@@ -138,7 +141,7 @@ class LinuxAcademyIE(InfoExtractor):
     def _real_extract(self, url):
         mobj = re.match(self._VALID_URL, url)
         chapter_id, lecture_id, course_id = mobj.group('chapter_id', 'lesson_id', 'course_id')
-        item_id = course_id if course_id else '%s-%s' % (chapter_id, lecture_id)
+        item_id = course_id or '%s-%s' % (chapter_id, lecture_id)
 
         webpage = self._download_webpage(url, item_id)
 

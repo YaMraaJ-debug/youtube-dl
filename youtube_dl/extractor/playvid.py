@@ -65,14 +65,14 @@ class PlayvidIE(InfoExtractor):
 
                 if key == 'title':
                     video_title = compat_urllib_parse_unquote_plus(val)
-                if key == 'duration':
+                if key == 'big_thumb':
+                    video_thumbnail = val
+
+                elif key == 'duration':
                     try:
                         duration = int(val)
                     except ValueError:
                         pass
-                if key == 'big_thumb':
-                    video_thumbnail = val
-
                 videourl_match = re.match(
                     r'^video_urls\]\[(?P<resolution>[0-9]+)p', key)
                 if videourl_match:

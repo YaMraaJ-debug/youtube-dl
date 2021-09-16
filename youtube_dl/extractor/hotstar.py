@@ -111,10 +111,11 @@ class HotStarIE(HotStarBaseIE):
             r'<script>window\.APP_STATE\s*=\s*({.+?})</script>',
             webpage, 'app state'), video_id)
         video_data = {}
-        getters = list(
+        getters = [
             lambda x, k=k: x['initialState']['content%s' % k]['content']
             for k in ('Data', 'Detail')
-        )
+        ]
+
         for v in app_state.values():
             content = try_get(v, getters, dict)
             if content and content.get('contentId') == video_id:
@@ -151,10 +152,7 @@ class HotStarIE(HotStarBaseIE):
                 elif 'package:dash' in tags or ext == 'mpd':
                     formats.extend(self._extract_mpd_formats(
                         format_url, video_id, mpd_id='dash', headers=headers))
-                elif ext == 'f4m':
-                    # produce broken files
-                    pass
-                else:
+                elif ext != 'f4m':
                     formats.append({
                         'url': format_url,
                         'width': int_or_none(playback_set.get('width')),

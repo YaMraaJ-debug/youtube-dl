@@ -147,7 +147,7 @@ Format: Marked,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text'''
         if not links:
             links_url = player_config.get('linksurl') or options['videoUrl']
             token = options['token']
-            self._K = ''.join([random.choice('0123456789abcdef') for _ in range(16)])
+            self._K = ''.join(random.choice('0123456789abcdef') for _ in range(16))
             message = bytes_to_intlist(json.dumps({
                 'k': self._K,
                 'e': 60,

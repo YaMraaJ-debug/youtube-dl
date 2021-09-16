@@ -203,8 +203,8 @@ class FranceTVIE(InfoExtractor):
             qs = compat_urlparse.parse_qs(compat_urlparse.urlparse(url).query)
             video_id = qs.get('idDiffusion', [None])[0]
             catalog = qs.get('catalogue', [None])[0]
-            if not video_id:
-                raise ExtractorError('Invalid URL', expected=True)
+        if not video_id:
+            raise ExtractorError('Invalid URL', expected=True)
 
         return self._extract_video(video_id, catalog)
 

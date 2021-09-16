@@ -53,8 +53,11 @@ class MelonVODIE(InfoExtractor):
         artist = None
         if isinstance(artist_list, list):
             artist = ', '.join(
-                [a['ARTISTNAMEWEBLIST']
-                 for a in artist_list if a.get('ARTISTNAMEWEBLIST')])
+                a['ARTISTNAMEWEBLIST']
+                for a in artist_list
+                if a.get('ARTISTNAMEWEBLIST')
+            )
+
 
         thumbnail = urljoin(info.get('staticDomain'), stream_info.get('imgPath'))
 

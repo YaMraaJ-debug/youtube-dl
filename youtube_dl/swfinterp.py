@@ -71,7 +71,7 @@ class _AVMClass(object):
         self.method_idxs = {}
         self.methods = {}
         self.method_pyfunctions = {}
-        self.static_properties = static_properties if static_properties else {}
+        self.static_properties = static_properties or {}
 
         self.variables = _ScopeDict(self)
         self.constants = {}
@@ -84,9 +84,7 @@ class _AVMClass(object):
 
     def register_methods(self, methods):
         self.method_names.update(methods.items())
-        self.method_idxs.update(dict(
-            (idx, name)
-            for name, idx in methods.items()))
+        self.method_idxs.update({idx: name for name, idx in methods.items()})
 
 
 class _Multiname(object):
@@ -104,7 +102,7 @@ def _read_int(reader):
         buf = reader.read(1)
         assert len(buf) == 1
         b = compat_struct_unpack('<B', buf)[0]
-        res = res | ((b & 0x7f) << shift)
+        res |= (b & 0x7f) << shift
         if b & 0x80 == 0:
             break
         shift += 7
@@ -150,8 +148,7 @@ def _read_bytes(count, reader):
 
 def _read_byte(reader):
     resb = _read_bytes(1, reader=reader)
-    res = compat_struct_unpack('<B', resb)[0]
-    return res
+    return compat_struct_unpack('<B', resb)[0]
 
 
 StringClass = _AVMClass('(no name idx)', 'String')
@@ -312,9 +309,7 @@ class SWFInterpreter(object):
                 u30()  # Slot id
                 u30()  # type_name_idx
                 vindex = u30()
-                vkind = 'any'
-                if vindex != 0:
-                    vkind = read_byte()
+                vkind = read_byte() if vindex != 0 else 'any'
                 if vkind == 0x03:  # Constant_Int
                     value = self.constant_ints[vindex]
                 elif vkind == 0x04:  # Constant_UInt
@@ -538,10 +533,7 @@ class SWFInterpreter(object):
                             assert len(args) == 1
                             assert isinstance(args[0], (
                                 int, compat_str, _Undefined))
-                            if args[0] == undefined:
-                                res = 'undefined'
-                            else:
-                                res = compat_str(args[0])
+                            res = 'undefined' if args[0] == undefined else compat_str(args[0])
                             stack.append(res)
                             continue
                         else:
@@ -567,33 +559,30 @@ class SWFInterpreter(object):
                         stack.append(res)
                         continue
                     elif isinstance(obj, compat_str):
-                        if mname == 'split':
-                            assert len(args) == 1
-                            assert isinstance(args[0], compat_str)
-                            if args[0] == '':
-                                res = list(obj)
-                            else:
-                                res = obj.split(args[0])
-                            stack.append(res)
-                            continue
-                        elif mname == 'charCodeAt':
+                        if mname == 'charCodeAt':
                             assert len(args) <= 1
-                            idx = 0 if len(args) == 0 else args[0]
+                            idx = 0 if not args else args[0]
                             assert isinstance(idx, int)
                             res = ord(obj[idx])
                             stack.append(res)
                             continue
-                    elif isinstance(obj, list):
-                        if mname == 'slice':
+                        elif mname == 'split':
                             assert len(args) == 1
-                            assert isinstance(args[0], int)
-                            res = obj[args[0]:]
+                            assert isinstance(args[0], compat_str)
+                            res = list(obj) if args[0] == '' else obj.split(args[0])
                             stack.append(res)
                             continue
-                        elif mname == 'join':
+                    elif isinstance(obj, list):
+                        if mname == 'join':
                             assert len(args) == 1
                             assert isinstance(args[0], compat_str)
                             res = args[0].join(obj)
+                            stack.append(res)
+                            continue
+                        elif mname == 'slice':
+                            assert len(args) == 1
+                            assert isinstance(args[0], int)
+                            res = obj[args[0]:]
                             stack.append(res)
                             continue
                     raise NotImplementedError(
@@ -642,18 +631,15 @@ class SWFInterpreter(object):
                         res = func(args)
                         assert res is undefined
                         continue
-                    if mname == 'reverse':
-                        assert isinstance(obj, list)
-                        obj.reverse()
-                    else:
+                    if mname != 'reverse':
                         raise NotImplementedError(
                             'Unsupported (void) property %r on %r'
                             % (mname, obj))
+                    assert isinstance(obj, list)
+                    obj.reverse()
                 elif opcode == 86:  # newarray
                     arg_count = u30()
-                    arr = []
-                    for i in range(arg_count):
-                        arr.append(stack.pop())
+                    arr = [stack.pop() for _ in range(arg_count)]
                     arr = arr[::-1]
                     stack.append(arr)
                 elif opcode == 93:  # findpropstrict

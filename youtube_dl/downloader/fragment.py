@@ -71,7 +71,7 @@ class FragmentFD(FileDownloader):
 
     @staticmethod
     def __do_ytdl_file(ctx):
-        return not ctx['live'] and not ctx['tmpfilename'] == '-'
+        return not ctx['live'] and ctx['tmpfilename'] != '-'
 
     def _read_ytdl_file(self, ctx):
         assert 'ytdl_corrupt' not in ctx

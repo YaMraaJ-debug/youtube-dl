@@ -124,10 +124,10 @@ class CBCIE(InfoExtractor):
                 clip_id, fatal=False)
             if feed:
                 media_id = try_get(feed, lambda x: x['entries'][0]['guid'], compat_str)
-            if not media_id:
-                media_id = self._download_json(
-                    'http://feed.theplatform.com/f/h9dtGB/punlNGjMlc1F?fields=id&byContent=byReleases%3DbyId%253D' + clip_id,
-                    clip_id)['entries'][0]['id'].split('/')[-1]
+        if not media_id:
+            media_id = self._download_json(
+                'http://feed.theplatform.com/f/h9dtGB/punlNGjMlc1F?fields=id&byContent=byReleases%3DbyId%253D' + clip_id,
+                clip_id)['entries'][0]['id'].split('/')[-1]
         return self.url_result('cbcplayer:%s' % media_id, 'CBCPlayer', media_id)
 
     def _real_extract(self, url):

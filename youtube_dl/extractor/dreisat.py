@@ -45,9 +45,7 @@ class DreiSatIE(InfoExtractor):
         for param_group in smil.findall(self._xpath_ns('./head/paramGroup', namespace)):
             group_id = param_group.get(self._xpath_ns(
                 'id', 'http://www.w3.org/XML/1998/namespace'))
-            params = {}
-            for param in param_group:
-                params[param.get('name')] = param.get('value')
+            params = {param.get('name'): param.get('value') for param in param_group}
             param_groups[group_id] = params
 
         formats = []
@@ -107,23 +105,7 @@ class DreiSatIE(InfoExtractor):
 
             ext = determine_ext(video_url, None) or format_m.group('container')
 
-            if ext == 'meta':
-                continue
-            elif ext == 'smil':
-                formats.extend(self._extract_smil_formats(
-                    video_url, video_id, fatal=False))
-            elif ext == 'm3u8':
-                # the certificates are misconfigured (see
-                # https://github.com/ytdl-org/youtube-dl/issues/8665)
-                if video_url.startswith('https://'):
-                    continue
-                formats.extend(self._extract_m3u8_formats(
-                    video_url, video_id, 'mp4', 'm3u8_native',
-                    m3u8_id=format_id, fatal=False))
-            elif ext == 'f4m':
-                formats.extend(self._extract_f4m_formats(
-                    video_url, video_id, f4m_id=format_id, fatal=False))
-            else:
+            if ext != 'meta':
                 quality = xpath_text(fnode, './quality')
                 if quality:
                     format_id += '-' + quality
